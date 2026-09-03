@@ -1,0 +1,68 @@
+# Source definitions. Adding a platform = adding an entry here.
+#
+# Selector lists are tried in order. Hashed class names (css-xxxxxx) are
+# Emotion-generated and rotate on every deploy -- they are kept only as a
+# last resort, AFTER stable structural selectors.
+
+sources:
+  - name: wuzzuf
+    enabled: true
+    fetcher: stealthy          # React SPA, needs a real browser
+    base_url: "https://wuzzuf.net"
+    search_url_template: "https://wuzzuf.net/search/jobs/?q={keyword}&filters%5Bpost_date%5D%5B0%5D=within_24_hours"
+    try_json_ld: true
+    min_expected_results: 3
+    selectors:
+      card:
+        - "div[data-testid='job-card']"
+        - "div.css-pkv5jc"
+        - "div.css-1gatmva"
+      title:
+        - "h2[class*='job-title'] a"
+        - "h2 a"
+        - "h2"
+      title_link:
+        - "h2[class*='job-title'] a"
+        - "h2 a"
+      company:
+        - "a[href*='/jobs/careers/']"
+        - "div[class*='company'] a"
+        - "a.css-17s97q8"
+      location:
+        - "span[class*='location']"
+        - "div[class*='location'] span"
+      posted_at:
+        - "div[class*='date']"
+        - "time"
+
+  - name: linkedin
+    enabled: true
+    # Item 9: the guest endpoint returns bare <li> cards with no auth wall
+    # and supports pagination via `start`. The public /jobs/search page
+    # frequently redirects to a sign-in prompt.
+    fetcher: static
+    base_url: "https://www.linkedin.com"
+    search_url_template: "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={keyword}&location={location}&f_TPR=r86400&start={start}"
+    strip_query_from_links: true   # LinkedIn appends tracking params
+    try_json_ld: false             # fragment carries no <script> tags
+    min_expected_results: 3
+    selectors:
+      card:
+        - "li"
+        - "div.base-card"
+      title:
+        - "h3.base-search-card__title"
+        - ".base-search-card__title"
+      title_link:
+        # Item 22: an explicit job-link selector. A bare "a" fallback would
+        # happily grab the *company* link and store the wrong URL silently.
+        - "a.base-card__full-link"
+        - "a[href*='/jobs/view/']"
+      company:
+        - "h4.base-search-card__subtitle a"
+        - ".base-search-card__subtitle"
+      location:
+        - ".job-search-card__location"
+      posted_at:
+        - "time.job-search-card__listdate"
+        - "time"
