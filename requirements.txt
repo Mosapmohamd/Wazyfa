@@ -1,0 +1,39 @@
+# Core API runtime
+fastapi>=0.115.0,<1.0.0
+uvicorn[standard]>=0.30.0,<1.0.0
+python-multipart>=0.0.9,<1.0.0
+pydantic>=2.0.0,<3.0.0
+pydantic-settings>=2.0.0,<3.0.0
+
+# Data and document processing
+pandas>=2.0.0,<3.0.0
+openpyxl>=3.1.0,<4.0.0          # required by pandas.to_excel
+PyMuPDF>=1.23.0,<2.0.0           # imported as `fitz`
+
+# HTTP and browser scraping
+requests>=2.31.0,<3.0.0          # direct runtime import in the CLI/scraping stack
+beautifulsoup4>=4.12.0,<5.0.0
+# StealthyFetcher uses Scrapling's browser fetcher extra.
+scrapling[fetchers]>=0.2.9,<1.0.0
+# Required by the documented `python -m playwright install chromium` setup command.
+playwright>=1.45.0,<2.0.0
+
+# ML / summarization / LLM
+# Keep Transformers below v5 until the summarizer and analyzer are migrated away
+# from the current pipeline/chat-template compatibility assumptions.
+torch>=2.1.0,<3.0.0
+transformers>=4.40.0,<5.0.0
+accelerate>=0.30.0,<2.0.0
+sentence-transformers>=3.0.0,<4.0.0
+# Needed when LLM_USE_4BIT=true on a supported CUDA environment.
+bitsandbytes>=0.43.0,<1.0.0
+sentencepiece>=0.2.0,<1.0.0
+# Used only when ALLOW_EXTERNAL_AI=true and an NVIDIA API key is configured.
+openai>=1.0.0,<2.0.0
+
+# Testing
+pytest>=8.0.0,<9.0.0
+httpx>=0.27.0,<1.0.0
+
+# Note: this file intentionally uses compatible ranges rather than a lockfile.
+# Generate and test a deployment lock/constraints file before production use.

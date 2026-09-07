@@ -1,0 +1,163 @@
+# Board definitions. Adding a source = adding an entry here.
+#
+# Selector lists are tried in order. Hashed class names (css-xxxxxx,
+# job_seen_beacon) are framework-generated and rotate on redeploy, so they
+# sit LAST, after stable structural and data-attribute selectors.
+
+sources:
+  - name: wuzzuf
+    platform_label: Wuzzuf
+    enabled: true
+    fetcher: stealthy                # React SPA
+    base_url: "https://wuzzuf.net"
+    # NOTE: the locations filter expects a Wuzzuf location value, not a country
+    # name. Passing "Egypt" appears to over-filter -- a search that should
+    # return a page of results comes back with two cards. If that is what you
+    # are seeing, swap to the template below, which drops the filter entirely
+    # (Wuzzuf is Egypt-only anyway).
+    #   "https://wuzzuf.net/search/jobs/?q={keyword}&filters%5Bpost_date%5D%5B0%5D=within_24_hours"
+    search_url_template: "https://wuzzuf.net/search/jobs/?q={keyword}&filters%5Blocations%5D%5B0%5D={location}&filters%5Bpost_date%5D%5B0%5D=within_24_hours"
+    try_json_ld: true
+    # Verified against a live dump: a 24h AI Engineer search in Egypt returned
+    # exactly 2 listings, and the page title said so. Low counts are the
+    # market, not a bug -- health is judged on extraction, not volume.
+    no_results_markers:
+      - "no jobs matching"
+      - "0 Jobs found"
+    selectors:
+      card:
+        - "div.css-pkv5jc"
+        - "div[data-testid='job-card']"
+        - "div.css-pkv5jc"
+        - "div.css-1gatmva"
+      title: ["h2[class*='job-title'] a", "h2 a", "h2"]
+      title_link: ["h2[class*='job-title'] a", "h2 a"]
+      company: ["a[href*='/jobs/careers/']", "div[class*='company'] a", "a.css-17s97q8"]
+      location: ["span[class*='location']", "div[class*='location'] span"]
+
+  - name: linkedin
+    platform_label: LinkedIn
+    enabled: true
+    # The public /jobs/search page frequently redirects to an auth wall.
+    # The guest endpoint returns bare <li> cards and paginates via `start`.
+    fetcher: static
+    base_url: "https://www.linkedin.com"
+    search_url_template: "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={keyword}&location={location}&f_TPR=r86400&start={start}"
+    strip_query_from_links: true
+    try_json_ld: false               # fragment carries no <script> tags
+    selectors:
+      card: ["li", "div.base-card"]
+      title: ["h3.base-search-card__title", ".base-search-card__title"]
+      # An explicit job-link selector. The old bare "a" fallback would happily
+      # match the company anchor and store the wrong URL silently.
+      title_link: ["a.base-card__full-link", "a[href*='/jobs/view/']"]
+      company: ["h4.base-search-card__subtitle a", ".base-search-card__subtitle"]
+      location: [".job-search-card__location"]
+
+  - name: indeed
+    platform_label: Indeed
+    enabled: true
+    fetcher: stealthy
+    base_url: "https://eg.indeed.com"
+    # The country domain already scopes the search, so `l` is left for a city.
+    # Passing the country name here returns "did not match any jobs".
+    search_url_template: "https://eg.indeed.com/jobs?q={keyword}&l={location}&fromage=7"
+    try_json_ld: true
+    no_results_markers:
+      - "did not match any jobs"
+      - "no jobs found"
+    selectors:
+      card:
+        - "div.job_seen_beacon"
+        - "div[data-testid='slider_item']"
+        - "td.resultContent"
+        - "div.cardOutline"
+        - "li div[data-jk]"
+        - "[data-jk]"
+      # Indeed moved the title from <h2> to <h3>. Heading-agnostic selectors
+      # come first so the next move costs nothing.
+      title:
+        - "[class*='jobTitle'] span[title]"
+        - "a.jcs-JobTitle span"
+        - "[id^='jobTitle-']"
+        - "a.jcs-JobTitle"
+        - "h3.jobTitle"
+        - "h2.jobTitle"
+      title_link: ["a.jcs-JobTitle", "[class*='jobTitle'] a", "h2 a"]
+      # `span.companyName` is Indeed's retired markup and matches nothing on
+      # the current site -- kept last only as a legacy fallback.
+      company:
+        - "[data-testid='company-name']"
+        - "span[data-testid='company-name']"
+        - "span.companyName"
+      location: ["[data-testid='text-location']", "div.companyLocation"]
+
+  - name: bayt
+    platform_label: Bayt
+    enabled: true
+    fetcher: stealthy
+    base_url: "https://www.bayt.com"
+    search_url_template: "https://www.bayt.com/en/{country_slug}/jobs/?q={keyword}&location={location}"
+    try_json_ld: true
+    # Bayt's own search is loose: a live dump of an "AI Engineer" query
+    # returned Lawyer, Receptionist and Professional Driver among 30 cards.
+    # Extraction working and one relevant result is a correct outcome here.
+    no_results_markers:
+      - "no jobs match"
+      - "0 jobs found"
+    selectors:
+      card: ["li.has-pointer-d", "div[data-js-job]"]
+      title: ["h2 a", "h2"]
+      title_link: ["h2 a"]
+      company:
+        - "span.company-name"
+        - "a[href*='/en/companies/']"
+        - "a[href*='/companies/']"
+        - "[class*='company']"
+        - "b"
+      location: ["div.jb-loc", "span.jb-loc"]
+
+  - name: jobzella
+    platform_label: Jobzella
+    enabled: true
+    fetcher: stealthy
+    base_url: "https://www.jobzella.com"
+    # The old /en/search path does not exist. It silently served an unrelated
+    # user profile page, which is why this board reported "0 cards" rather
+    # than an error. The real search route is /search/jobs.
+    # UNVERIFIED: the query parameter names still need confirming against a
+    # fresh dump -- run `check_sources.py --dump-html` for jobzella.
+    search_url_template: "https://www.jobzella.com/search/jobs?keyword={keyword}&location={location}"
+    # Jobzella is a Next.js app and ships its results as JSON in the page.
+    # Field names come from the site's own API contract rather than from
+    # generated class names like `css-1238myt`, which change every build.
+    next_data:
+      json_path: "props.pageProps.jobs"
+      fields:
+        title: "position.name"
+        company: "company.title"
+        location: "location"
+        id: "id"
+      # UNVERIFIED: the job-page URL format is inferred from the id. Open one
+      # of the produced links once to confirm before trusting them.
+      link_template: "https://www.jobzella.com/job/{id}"
+    # Left on: a stray JSON-LD posting no longer suppresses the other
+    # strategies, since all of them now run and are merged.
+    try_json_ld: true
+    # Deliberately narrow. A generic "no results" marker matched the unrelated
+    # profile page this board was serving, turning a real breakage into a
+    # reassuring "nothing is broken". Markers must be specific enough that
+    # they cannot appear on the wrong page.
+    no_results_markers:
+      - "no jobs match your search"
+    selectors:
+      # The DOM is MUI with hashed classes; __NEXT_DATA__ above is the
+      # primary path. These are a fallback only.
+      card:
+        - "div.MuiGrid-item"
+        - "div.job-box"
+        - "div.job-card"
+      title: ["h6.MuiTypography-h6", "h4 a", "h3 a"]
+      title_link: ["a[href*='/job/']"]
+      company: ["div.company-name", "span.company-name"]
+      location: ["div.job-location", "span.job-location"]
