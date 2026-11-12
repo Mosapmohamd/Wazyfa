@@ -1,0 +1,10 @@
+export type Status = "pending" | "running" | "completed" | "failed";
+export type Flow = "manual" | "cv-search" | "cv-direct";
+export type Job = { Platform: string; Title: string; Company: string; Link: string; seniority_match?: string };
+export type BackendJob<T> = { id: string; job_type: string; status: Status; error?: string | null; result?: T | null };
+export type Profile = { upload_id: string; role: string; target_level: string; skills: string[]; extracted_chars: number; matched_signals?: { role: globalThis.Record<string, number>; seniority: globalThis.Record<string, number> } };
+export type SearchResult = { keyword: string; location: string; total_found: number; total_after_filter?: number | null; jobs: Job[] };
+export type SearchSession = { searchId: string; flow: Flow; profile?: Profile; level?: string; result: SearchResult };
+export type GapResult = { run_id: string; keyword: string; target_level?: string | null; location: string; jobs_found: number; jobs_filtered: number; market_summary: string; report: string };
+export type CvResult = { upload_id: string; role: string; target_level: string; skills: string[]; extracted_chars: number; review: string };
+export type AnalysisSession = { kind: "gap"; result: GapResult } | { kind: "cv"; result: CvResult };
