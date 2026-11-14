@@ -1,0 +1,1 @@
+"""AI Job Skill Gap Analyzer package."""
